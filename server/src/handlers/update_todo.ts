@@ -1,16 +1,39 @@
+import { db } from '../db';
+import { todosTable } from '../db/schema';
 import { type UpdateTodoInput, type Todo } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const updateTodo = async (input: UpdateTodoInput): Promise<Todo | null> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing todo in the database.
-    // It should update only the provided fields and set updated_at to current timestamp.
-    // Returns the updated todo if found, or null if the todo doesn't exist.
-    return Promise.resolve({
-        id: input.id,
-        title: input.title || "Updated todo",
-        description: input.description !== undefined ? input.description : null,
-        completed: input.completed || false,
-        created_at: new Date(),
-        updated_at: new Date() // This should be updated to current time
-    } as Todo);
+  try {
+    // Build the update object only with provided fields
+    const updateData: any = {
+      updated_at: new Date() // Always update the timestamp
+    };
+
+    // Only include fields that were actually provided
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+
+    if (input.completed !== undefined) {
+      updateData.completed = input.completed;
+    }
+
+    // Update the todo and return the updated record
+    const result = await db.update(todosTable)
+      .set(updateData)
+      .where(eq(todosTable.id, input.id))
+      .returning()
+      .execute();
+
+    // Return the updated todo or null if not found
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error('Todo update failed:', error);
+    throw error;
+  }
 };

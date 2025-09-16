@@ -1,8 +1,20 @@
+import { db } from '../db';
+import { todosTable } from '../db/schema';
 import { type DeleteTodoInput } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const deleteTodo = async (input: DeleteTodoInput): Promise<boolean> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is deleting a todo from the database by its ID.
-    // It should return true if the todo was successfully deleted, false if not found.
-    return Promise.resolve(true); // Placeholder return value
+  try {
+    // Delete the todo record by ID
+    const result = await db.delete(todosTable)
+      .where(eq(todosTable.id, input.id))
+      .returning()
+      .execute();
+
+    // Return true if a record was deleted, false if not found
+    return result.length > 0;
+  } catch (error) {
+    console.error('Todo deletion failed:', error);
+    throw error;
+  }
 };
